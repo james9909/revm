@@ -1,0 +1,8 @@
+[package]
+name = "revm"
+version = "0.1.0"
+authors = ["James Wang <jameswang9909@hotmail.com>"]
+
+[dependencies]
+etcommon-bigint = "0.2.9"
+failure = "0.1.1"
