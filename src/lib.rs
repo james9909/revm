@@ -4,6 +4,7 @@ extern crate failure;
 
 pub mod asm;
 pub mod errors;
+pub mod vm;
 
 #[cfg(test)]
 mod tests {
