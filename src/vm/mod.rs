@@ -82,13 +82,147 @@ impl<'a> VM<'a> {
             Instruction::SDIV => {
                 let left = self.state.stack.pop()?;
                 let right = self.state.stack.pop()?;
-                if right == U256::zero() {
-                    self.state.stack.push(right)?;
+                let result = if right == U256::zero() {
+                    right
                 } else {
-                    let (left, sign_left) = to_signed(left);
-                    let (right, sign_right) = to_signed(right);
+                    let (left, left_sign) = to_signed(left);
+                    let (right, right_sign) = to_signed(right);
                     let min = (U256::one() << 255) - U256::one();
-                }
+
+                    if left == min && right == !U256::one() {
+                        min
+                    } else {
+                        let sign = left_sign ^ right_sign;
+                        set_sign(left.overflowing_div(right).0, sign)
+                    }
+                };
+                self.state.stack.push(result)?;
+            }
+            Instruction::MOD => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(if right == U256::zero() {
+                    right
+                } else {
+                    left.overflowing_rem(right).0
+                })?
+            }
+            Instruction::SMOD => {
+                let (left, left_sign) = to_signed(self.state.stack.pop()?);
+                let right = to_signed(self.state.stack.pop()?).0;
+                self.state.stack.push(if right == U256::zero() {
+                    right
+                } else {
+                    set_sign(left.overflowing_rem(right).0, left_sign)
+                })?;
+            }
+            Instruction::ADDMOD => {
+                let a = self.state.stack.pop()?;
+                let b = self.state.stack.pop()?;
+                let c = self.state.stack.pop()?;
+                self.state.stack.push(if c == U256::zero() {
+                    c
+                } else {
+                    (a.overflowing_add(b).0).overflowing_rem(c).0
+                })?;
+            }
+            Instruction::MULMOD => {
+                let a = self.state.stack.pop()?;
+                let b = self.state.stack.pop()?;
+                let c = self.state.stack.pop()?;
+                self.state.stack.push(if c == U256::zero() {
+                    c
+                } else {
+                    (a.overflowing_mul(b).0).overflowing_rem(c).0
+                })?;
+            }
+            Instruction::EXP => {
+                let base = self.state.stack.pop()?;
+                let power = self.state.stack.pop()?;
+                self.state.stack.push(base.overflowing_pow(power).0)?;
+            }
+            Instruction::SIGNEXTEND => {
+                let value = self.state.stack.pop()?;
+                self.state.stack.push(if value > U256::from(32) {
+                    value
+                } else {
+                    let bit = (value.low_u64() * 8 + 7) as usize;
+                    let mask = (U256::one() << bit) - U256::one();
+                    if value.bit(bit) {
+                        value | !mask
+                    } else {
+                        value & mask
+                    }
+                })?;
+            }
+            Instruction::LT => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(bool_to_u256(left < right))?;
+            }
+            Instruction::GT => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(bool_to_u256(left > right))?;
+            }
+            Instruction::SLT => {
+                let (left, left_sign) = to_signed(self.state.stack.pop()?);
+                let (right, right_sign) = to_signed(self.state.stack.pop()?);
+                let result = match (left_sign, right_sign) {
+                    (false, false) => left < right,
+                    (true, true) => left > right,
+                    (true, false) => true,
+                    (false, true) => false,
+                };
+                self.state.stack.push(bool_to_u256(result))?;
+            }
+            Instruction::SGT => {
+                let (left, left_sign) = to_signed(self.state.stack.pop()?);
+                let (right, right_sign) = to_signed(self.state.stack.pop()?);
+                let result = match (left_sign, right_sign) {
+                    (false, false) => left > right,
+                    (true, true) => left < right,
+                    (true, false) => false,
+                    (false, true) => true,
+                };
+                self.state.stack.push(bool_to_u256(result))?;
+            }
+            Instruction::EQ => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(bool_to_u256(left == right))?;
+            }
+            Instruction::ISZERO => {
+                let value = self.state.stack.pop()?;
+                self.state.stack.push(bool_to_u256(value == U256::zero()))?;
+            }
+            Instruction::AND => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(left & right)?;
+            }
+            Instruction::OR => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(left | right)?;
+            }
+            Instruction::XOR => {
+                let left = self.state.stack.pop()?;
+                let right = self.state.stack.pop()?;
+                self.state.stack.push(left ^ right)?;
+            }
+            Instruction::NOT => {
+                let value = self.state.stack.pop()?;
+                self.state.stack.push(!value)?;
+            }
+            Instruction::BYTE => {
+                let byte = self.state.stack.pop()?;
+                let word = self.state.stack.pop()?;
+                self.state.stack.push(if byte > U256::from(32) {
+                    U256::zero()
+                } else {
+                    U256::from(word.byte(byte.as_u64() as usize))
+                })?;
             }
             _ => return Ok(InstructionResult::STOP),
         };
@@ -114,10 +248,22 @@ impl<'a> VM<'a> {
 
 fn to_signed(value: U256) -> (U256, bool) {
     let sign = value.bit(255);
-    let signed: U256 = if sign {
+    let signed = set_sign(value, sign);
+    (signed, sign)
+}
+
+fn set_sign(value: U256, sign: bool) -> U256 {
+    if sign {
         (!value).overflowing_add(U256::one()).0
     } else {
         value
-    };
-    (signed, sign)
+    }
+}
+
+fn bool_to_u256(b: bool) -> U256 {
+    if b {
+        U256::one()
+    } else {
+        U256::zero()
+    }
 }
