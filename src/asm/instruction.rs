@@ -93,7 +93,7 @@ pub enum Instruction {
     SELFDESTRUCT,
 }
 
-struct ProgramReader<'a> {
+pub struct ProgramReader<'a> {
     code: &'a [u8],
     position: usize,
 }
@@ -116,6 +116,10 @@ impl<'a> ProgramReader<'a> {
         let result = &self.code[start..end];
         self.position = end;
         Ok(result)
+    }
+
+    pub fn size(&self) -> usize {
+        self.code.len()
     }
 
     pub fn next_instruction(&mut self) -> Result<Instruction> {

@@ -8,14 +8,14 @@ pub struct Stack<T> {
 #[allow(dead_code)]
 /// Stack implementation for the EVM
 impl<T: Copy> Stack<T> {
-    fn new(capacity: usize) -> Stack<T> {
+    pub fn new(capacity: usize) -> Stack<T> {
         Stack {
             data: Vec::with_capacity(capacity),
             capacity: capacity,
         }
     }
 
-    fn push(&mut self, item: T) -> Result<()> {
+    pub fn push(&mut self, item: T) -> Result<()> {
         if self.data.len() >= self.capacity {
             return Err(Error::StackOverflow);
         }
@@ -23,21 +23,21 @@ impl<T: Copy> Stack<T> {
         Ok(())
     }
 
-    fn peek(&self) -> Result<T> {
+    pub fn peek(&self) -> Result<T> {
         match self.data.len() {
             0 => Err(Error::StackUnderflow),
             _ => Ok(self.data[self.data.len() - 1].clone()),
         }
     }
 
-    fn pop(&mut self) -> Result<T> {
+    pub fn pop(&mut self) -> Result<T> {
         match self.data.len() {
             0 => Err(Error::StackUnderflow),
             _ => Ok(self.data.pop().unwrap()),
         }
     }
 
-    fn dup(&mut self, position: usize) -> Result<()> {
+    pub fn dup(&mut self, position: usize) -> Result<()> {
         match self.data.len() {
             0 => Err(Error::StackOverflow),
             _ => {
@@ -51,7 +51,7 @@ impl<T: Copy> Stack<T> {
         }
     }
 
-    fn swap(&mut self, position: usize) -> Result<()> {
+    pub fn swap(&mut self, position: usize) -> Result<()> {
         match self.data.len() {
             0 => Err(Error::StackOverflow),
             _ => {

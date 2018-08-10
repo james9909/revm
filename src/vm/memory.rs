@@ -11,21 +11,21 @@ pub struct Memory {
 #[allow(dead_code)]
 /// Memory model used for the EVM
 impl Memory {
-    fn new() -> Memory {
+    pub fn new() -> Memory {
         Memory { bytes: Vec::new() }
     }
 
-    fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         self.bytes.len()
     }
 
-    fn expand(&mut self, new_size: usize) {
+    pub fn expand(&mut self, new_size: usize) {
         if new_size > self.bytes.len() {
             self.bytes.resize(new_size, 0);
         }
     }
 
-    fn write(&mut self, offset: usize, value: U256) -> Result<()> {
+    pub fn write(&mut self, offset: usize, value: U256) -> Result<()> {
         if offset + WORD_SIZE >= self.bytes.len() {
             self.expand(offset + WORD_SIZE);
         }
@@ -35,7 +35,7 @@ impl Memory {
         Ok(())
     }
 
-    fn read(&mut self, offset: usize) -> Result<U256> {
+    pub fn read(&mut self, offset: usize) -> Result<U256> {
         if offset + WORD_SIZE >= self.bytes.len() {
             self.expand(offset + WORD_SIZE);
         }
@@ -63,7 +63,6 @@ mod tests {
 
         let value = U256::from(0xabcd);
         assert!(memory.write(0, value).is_ok());
-        println!("{:?}", memory.bytes);
         assert_eq!(memory.read(1).unwrap(), U256::from(0xabcd00));
     }
 

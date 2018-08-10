@@ -21,4 +21,7 @@ pub enum Error {
 
     #[fail(display = "PC Overflow")]
     PcOverflow,
+
+    #[fail(display = "Revert")]
+    Revert,
 }
