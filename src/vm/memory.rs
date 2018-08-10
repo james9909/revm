@@ -25,7 +25,8 @@ impl Memory {
         }
     }
 
-    pub fn write(&mut self, offset: usize, value: U256) -> Result<()> {
+    pub fn write(&mut self, offset: U256, value: U256) -> Result<()> {
+        let offset = offset.low_u64() as usize;
         if offset + WORD_SIZE >= self.bytes.len() {
             self.expand(offset + WORD_SIZE);
         }
@@ -35,11 +36,13 @@ impl Memory {
         Ok(())
     }
 
-    pub fn read(&mut self, offset: usize) -> Result<U256> {
-        if offset + WORD_SIZE >= self.bytes.len() {
-            self.expand(offset + WORD_SIZE);
+    pub fn read(&mut self, offset: U256, amount: U256) -> Result<U256> {
+        let offset = offset.low_u64() as usize;
+        let amount = amount.low_u64() as usize;
+        if offset + amount >= self.bytes.len() {
+            self.expand(offset + amount);
         }
-        Ok(self.bytes[offset..offset + WORD_SIZE].as_ref().into())
+        Ok(self.bytes[offset..offset + amount].as_ref().into())
     }
 }
 
@@ -52,18 +55,24 @@ mod tests {
     fn can_read_write() {
         let mut memory = Memory::new();
         let value = U256::from(0x12);
-        assert!(memory.write(0, value).is_ok());
-        assert_eq!(memory.read(0).unwrap(), value);
+        assert!(memory.write(U256::zero(), value).is_ok());
+        assert_eq!(memory.read(U256::zero(), U256::from(32)).unwrap(), value);
     }
 
     #[test]
     fn read_out_of_range() {
         let mut memory = Memory::new();
-        assert_eq!(memory.read(0).unwrap(), U256::from(0));
+        assert_eq!(
+            memory.read(U256::zero(), U256::from(32)).unwrap(),
+            U256::from(0)
+        );
 
         let value = U256::from(0xabcd);
-        assert!(memory.write(0, value).is_ok());
-        assert_eq!(memory.read(1).unwrap(), U256::from(0xabcd00));
+        assert!(memory.write(U256::zero(), value).is_ok());
+        assert_eq!(
+            memory.read(U256::one(), U256::from(32)).unwrap(),
+            U256::from(0xabcd00)
+        );
     }
 
     #[test]
