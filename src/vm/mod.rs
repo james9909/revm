@@ -52,38 +52,38 @@ impl<'a> VM<'a> {
         let instruction = self.reader.next_instruction()?;
         match instruction {
             Instruction::PUSH(value) => {
-                self.state.stack.push(value);
+                self.state.stack.push(value)?;
             }
             Instruction::STOP => return Ok(InstructionResult::STOP),
             Instruction::ADD => {
                 let left = self.state.stack.pop()?;
                 let right = self.state.stack.pop()?;
-                self.state.stack.push(left.overflowing_add(right).0);
+                self.state.stack.push(left.overflowing_add(right).0)?;
             }
             Instruction::MUL => {
                 let left = self.state.stack.pop()?;
                 let right = self.state.stack.pop()?;
-                self.state.stack.push(left.overflowing_mul(right).0);
+                self.state.stack.push(left.overflowing_mul(right).0)?;
             }
             Instruction::SUB => {
                 let left = self.state.stack.pop()?;
                 let right = self.state.stack.pop()?;
-                self.state.stack.push(left.overflowing_sub(right).0);
+                self.state.stack.push(left.overflowing_sub(right).0)?;
             }
             Instruction::DIV => {
                 let left = self.state.stack.pop()?;
                 let right = self.state.stack.pop()?;
                 if right == U256::zero() {
-                    self.state.stack.push(right);
+                    self.state.stack.push(right)?;
                 } else {
-                    self.state.stack.push(left / right);
+                    self.state.stack.push(left / right)?;
                 }
             }
             Instruction::SDIV => {
                 let left = self.state.stack.pop()?;
                 let right = self.state.stack.pop()?;
                 if right == U256::zero() {
-                    self.state.stack.push(right);
+                    self.state.stack.push(right)?;
                 } else {
                     let (left, sign_left) = to_signed(left);
                     let (right, sign_right) = to_signed(right);
@@ -119,5 +119,5 @@ fn to_signed(value: U256) -> (U256, bool) {
     } else {
         value
     };
-    (value, sign)
+    (signed, sign)
 }
