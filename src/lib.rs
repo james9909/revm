@@ -1,6 +1,7 @@
 extern crate bigint;
 #[macro_use]
 extern crate failure;
+extern crate tiny_keccak;
 
 pub mod asm;
 pub mod errors;
