@@ -72,7 +72,17 @@ impl AccountManager {
         }
     }
 
-    fn get_account(&self, address: &Address) -> Result<&AccountState> {
+    pub fn create_account(&mut self, address: &Address, code: Vec<u8>, balance: U256) {
+        if self.accounts.contains_key(address) {
+            return;
+        }
+        let mut account_state = AccountState::new();
+        account_state.set_balance(balance);
+        account_state.set_code(code);
+        self.accounts.insert(*address, account_state);
+    }
+
+    pub fn get_account(&self, address: &Address) -> Result<&AccountState> {
         if !self.accounts.contains_key(address) {
             Err(Error::AccountNotFound)
         } else {
@@ -80,7 +90,7 @@ impl AccountManager {
         }
     }
 
-    fn get_account_mut(&mut self, address: &Address) -> Result<&mut AccountState> {
+    pub fn get_account_mut(&mut self, address: &Address) -> Result<&mut AccountState> {
         if !self.accounts.contains_key(address) {
             Err(Error::AccountNotFound)
         } else {

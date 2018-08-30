@@ -27,23 +27,23 @@ pub enum InstructionResult {
 }
 
 /// Information regarding the current state of the VM
-struct VMState {
-    account_manager: AccountManager,
-    caller: Address,
-    code: Vec<u8>,
-    data: Vec<u8>,
+pub struct VMState {
+    pub account_manager: AccountManager,
+    pub caller: Address,
+    pub code: Vec<u8>,
+    pub data: Vec<u8>,
     memory: Memory,
     stack: Stack<U256>,
-    gas_available: U256,
+    pub gas_available: U256,
     pc: usize,
-    owner: Address,
-    origin: Address,
-    value: U256,
+    pub owner: Address,
+    pub origin: Address,
+    pub value: U256,
 }
 
 pub struct VM {
     reader: ProgramReader,
-    state: VMState,
+    pub state: VMState,
 }
 
 impl VM {

@@ -6,13 +6,20 @@ extern crate serde_json;
 
 use self::revm::vm::{VMResult, VM};
 
-use self::bigint::U256;
-use self::hexutil::read_hex;
+use self::bigint::{Address, U256};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::{read_dir, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
+
+fn read_serde_hex(data: &Value) -> Vec<u8> {
+    read_hex(data.as_str().unwrap())
+}
+
+fn read_hex(s: &str) -> Vec<u8> {
+    hexutil::read_hex(s).unwrap()
+}
 
 fn load_test(path: PathBuf) -> HashMap<String, Value> {
     let mut file = File::open(path).expect("unable to open test file");
@@ -33,15 +40,80 @@ pub fn load_tests(path: &str) -> HashMap<String, Value> {
 
 fn setup_vm(data: &Value) -> VM {
     let exec = &data["exec"];
-    let code = read_hex(exec["code"].as_str().unwrap()).unwrap();
-    let gas = read_hex(exec["gas"].as_str().unwrap()).unwrap();
-    VM::new(code, U256::from(&gas[..]))
+    let code = read_serde_hex(&exec["code"]);
+    let gas = read_serde_hex(&exec["gas"]);
+    let mut vm = VM::new(code, U256::from(&gas[..]));
+
+    let caller = Address::from(&read_serde_hex(&exec["caller"])[..]);
+    let code = read_serde_hex(&exec["code"]);
+    let data = read_serde_hex(&exec["data"]);
+    let gas = U256::from(&read_serde_hex(&exec["data"])[..]);
+    let origin = Address::from(&read_serde_hex(&exec["origin"])[..]);
+    let owner = Address::from(&read_serde_hex(&exec["address"])[..]);
+    let value = U256::from(&read_serde_hex(&exec["value"])[..]);
+
+    vm.state.caller = caller;
+    vm.state.code = code.clone();
+    vm.state.data = data;
+    vm.state.gas_available = gas;
+    vm.state.origin = origin;
+    vm.state.owner = owner;
+    vm.state.value = value;
+
+    vm.state.account_manager.create_account(&owner, code, value);
+    vm
+}
+
+fn validate_results(post: &Value, vm: &VM) -> bool {
+    for (address, expected) in post.as_object().unwrap() {
+        let address = Address::from(&read_hex(address)[..]);
+        let account = vm.state.account_manager.get_account(&address).unwrap();
+
+        let code = read_serde_hex(&expected["code"]);
+        if code != *account.get_code() {
+            println!("\nIncorrect code for address 0x{:x}", address);
+            return false;
+        }
+
+        let balance = U256::from(&read_serde_hex(&expected["balance"])[..]);
+        if balance != account.get_balance() {
+            println!("\nIncorrect balance for address 0x{:x}", address);
+            return false;
+        }
+
+        let nonce = U256::from(&read_serde_hex(&expected["nonce"])[..]);
+        if nonce.low_u32() != account.get_nonce() {
+            println!("\nIncorrect nonce for address 0x{:x}", address);
+            return false;
+        }
+
+        let storage = expected["storage"].as_object().unwrap();
+        for (offset, value) in storage {
+            let offset = U256::from(&read_hex(offset)[..]);
+            let value = U256::from(&read_serde_hex(value)[..]);
+
+            let candidate = vm.state
+                .account_manager
+                .get_storage(&address, &offset)
+                .unwrap();
+            if candidate != value {
+                println!(
+                    "\nStorage check failed for address 0x{:x} at offset 0x{:x}",
+                    address, offset
+                );
+                println!("Got 0x{:x}", candidate);
+                println!("Expected 0x{:x}", value);
+                return false;
+            }
+        }
+    }
+    true
 }
 
 pub fn run_test(data: &Value) -> bool {
     let mut vm = setup_vm(&data);
     match vm.run() {
-        VMResult::SUCCESS => true,
+        VMResult::SUCCESS => validate_results(&data["post"], &vm),
         _ => false,
     }
 }
