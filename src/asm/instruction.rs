@@ -33,6 +33,8 @@ pub enum Instruction {
 
     // SHA3
     SHA3,
+
+    // Environmental information
     ADDRESS,
     BALANCE,
     ORIGIN,

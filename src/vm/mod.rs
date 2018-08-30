@@ -1,9 +1,13 @@
+mod account;
 mod memory;
 mod stack;
 
+use tiny_keccak::keccak256;
+
 use asm::instruction::{Instruction, ProgramReader};
-use bigint::U256;
+use bigint::{Address, U256};
 use errors::{Error, Result};
+use vm::account::AccountManager;
 use vm::memory::Memory;
 use vm::stack::Stack;
 
@@ -24,10 +28,17 @@ enum InstructionResult {
 
 /// Information regarding the current state of the VM
 struct VMState {
+    account_manager: AccountManager,
+    caller: Address,
+    code: Vec<u8>,
+    data: Vec<u8>,
     memory: Memory,
     stack: Stack<U256>,
     gas_available: U256,
     pc: usize,
+    owner: Address,
+    origin: Address,
+    value: U256,
 }
 
 struct VM<'a> {
@@ -40,10 +51,17 @@ impl<'a> VM<'a> {
         VM {
             reader: ProgramReader::new(code),
             state: VMState {
+                account_manager: AccountManager::new(),
+                code: Vec::new(),
+                caller: Address::from(0),
+                data: Vec::new(),
                 memory: Memory::new(),
                 stack: Stack::new(MAX_STACK_SIZE),
                 gas_available: gas_available,
                 pc: 0,
+                owner: Address::from(0),
+                origin: Address::from(0),
+                value: U256::zero(),
             },
         }
     }
@@ -224,6 +242,82 @@ impl<'a> VM<'a> {
                     U256::from(word.byte(byte.as_u64() as usize))
                 })?;
             }
+            Instruction::SHA3 => {
+                let offset = self.state.stack.pop()?;
+                let amount = self.state.stack.pop()?;
+                let value = self.state.memory.read(offset, amount)?;
+                let mut bytes = vec![0; 32];
+                value.to_big_endian(&mut bytes);
+                let result = keccak256(bytes.as_slice());
+
+                self.state.stack.push(U256::from(&result[..]))?;
+            }
+            Instruction::ADDRESS => {
+                self.state.stack.push(address_to_u256(self.state.owner))?;
+            }
+            Instruction::BALANCE => {
+                let address = u256_to_address(self.state.stack.pop()?);
+                let balance = self.state.account_manager.balance(&address)?;
+                self.state.stack.push(U256::from(balance))?;
+            }
+            Instruction::ORIGIN => {
+                self.state.stack.push(address_to_u256(self.state.origin))?;
+            }
+            Instruction::CALLER => {
+                self.state.stack.push(address_to_u256(self.state.caller))?;
+            }
+            Instruction::CALLVALUE => {
+                self.state.stack.push(self.state.value)?;
+            }
+            Instruction::CALLDATALOAD => {
+                let offset = self.state.stack.pop()?.low_u64() as usize;
+                let mut bytes = &self.state.data[offset..offset + 32];
+                self.state.stack.push(U256::from(bytes))?;
+            }
+            Instruction::CALLDATASIZE => {
+                self.state.stack.push(U256::from(self.state.data.len()))?;
+            }
+            Instruction::CALLDATACOPY => {
+                let mem_offset = self.state.stack.pop()?;
+                let data_offset = self.state.stack.pop()?.low_u64() as usize;
+                let data_size = self.state.stack.pop()?.low_u64() as usize;
+                let value = &self.state.data[data_offset..data_offset + data_size];
+                self.state.memory.write(mem_offset, U256::from(value))?;
+            }
+            Instruction::CODESIZE => {
+                self.state.stack.push(U256::from(self.state.code.len()))?;
+            }
+            Instruction::CODECOPY => {
+                let mem_offset = self.state.stack.pop()?;
+                let code_offset = self.state.stack.pop()?.low_u64() as usize;
+                let code_size = self.state.stack.pop()?.low_u64() as usize;
+                let value = &self.state.code[code_offset..code_offset + code_size];
+                self.state.memory.write(mem_offset, U256::from(value))?;
+            }
+            Instruction::GASPRICE => {
+                // TODO
+            }
+            Instruction::EXTCODESIZE => {
+                let address = u256_to_address(self.state.stack.pop()?);
+                let code = self.state.account_manager.code(&address)?;
+                self.state.stack.push(U256::from(code.len()))?;
+            }
+            Instruction::EXTCODECOPY => {
+                let address = u256_to_address(self.state.stack.pop()?);
+                let code = self.state.account_manager.code(&address)?;
+
+                let mem_offset = self.state.stack.pop()?;
+                let code_offset = self.state.stack.pop()?.low_u64() as usize;
+                let code_size = self.state.stack.pop()?.low_u64() as usize;
+                let value = &code[code_offset..code_offset + code_size];
+                self.state.memory.write(mem_offset, U256::from(value))?;
+            }
+            Instruction::RETURNDATASIZE => {
+                // TODO
+            }
+            Instruction::RETURNDATACOPY => {
+                // TODO
+            }
             _ => return Ok(InstructionResult::STOP),
         };
         Ok(InstructionResult::NOTHING)
@@ -266,4 +360,14 @@ fn bool_to_u256(b: bool) -> U256 {
     } else {
         U256::zero()
     }
+}
+
+fn address_to_u256(address: Address) -> U256 {
+    U256::from(&address[0..20])
+}
+
+fn u256_to_address(value: U256) -> Address {
+    let mut bytes = vec![0; 32];
+    value.to_big_endian(&mut bytes);
+    Address::from(&bytes[0..20])
 }
