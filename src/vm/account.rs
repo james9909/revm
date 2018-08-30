@@ -1,7 +1,7 @@
 use bigint::{Address, M256, U256};
 use std::collections::HashMap;
 
-use errors::Result;
+use errors::{Error, Result};
 
 pub struct Storage {
     storage: HashMap<U256, M256>,
@@ -24,6 +24,7 @@ impl Storage {
 }
 
 pub struct AccountState {
+    code: Vec<u8>,
     nonce: u32,
     balance: u32,
     storage: Storage,
@@ -32,6 +33,7 @@ pub struct AccountState {
 impl AccountState {
     fn new() -> Self {
         AccountState {
+            code: Vec::new(),
             nonce: 0,
             balance: 0,
             storage: Storage::new(),
@@ -50,11 +52,21 @@ impl AccountManager {
         }
     }
 
-    pub fn has_address(&self, address: &Address) -> bool {
-        self.accounts.contains_key(address)
+    fn get_account(&self, address: &Address) -> Result<AccountState> {
+        if !self.accounts.contains_key(address) {
+            Err(Error::AccountNotFound)
+        } else {
+            Ok(self.accounts[address])
+        }
     }
 
     pub fn balance(&self, address: &Address) -> Result<u32> {
-        Ok(self.accounts[address].balance)
+        let account = self.get_account(address)?;
+        Ok(account.balance)
+    }
+
+    pub fn code(&self, address: &Address) -> Result<Vec<u8>> {
+        let account = self.get_account(address)?;
+        Ok(account.code)
     }
 }

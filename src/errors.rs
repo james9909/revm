@@ -24,4 +24,7 @@ pub enum Error {
 
     #[fail(display = "Revert")]
     Revert,
+
+    #[fail(display = "account does not exist")]
+    AccountNotFound,
 }
