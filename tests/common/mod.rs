@@ -115,7 +115,7 @@ pub fn run_test(data: &Value) -> bool {
     let mut vm = setup_vm(&data);
     match vm.run() {
         VMResult::SUCCESS => validate_results(&data["post"], &vm),
-        VMResult::FAILURE(e) => {
+        VMResult::FAILURE(_e) => {
             // If a test doesn't contain postconditions, then a failure is intended
             data["post"].as_object().is_none()
         }
