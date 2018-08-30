@@ -67,9 +67,9 @@ impl VM {
     }
 
     pub fn step(&mut self) -> Result<InstructionResult> {
-        // if self.reader.is_done() {
-        //     return Ok(InstructionResult::STOP);
-        // }
+        if self.reader.is_done() {
+            return Ok(InstructionResult::STOP);
+        }
         let instruction = self.reader.next_instruction()?;
         match instruction {
             Instruction::PUSH(value) => {
