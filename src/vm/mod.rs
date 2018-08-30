@@ -346,7 +346,10 @@ impl VM {
             let result = self.step();
             match result {
                 Ok(instruction_result) => match instruction_result {
-                    InstructionResult::STOP | InstructionResult::NOTHING => {}
+                    InstructionResult::STOP => {
+                        break;
+                    }
+                    InstructionResult::NOTHING => {}
                     InstructionResult::REVERT => {
                         return VMResult::FAILURE(Error::Revert);
                     }

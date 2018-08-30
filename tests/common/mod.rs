@@ -34,7 +34,6 @@ pub fn load_tests(path: &str) -> HashMap<String, Value> {
 fn setup_vm(data: &Value) -> VM {
     let exec = &data["exec"];
     let code = read_hex(exec["code"].as_str().unwrap()).unwrap();
-    println!("{:?}", code);
     let gas = read_hex(exec["gas"].as_str().unwrap()).unwrap();
     VM::new(code, U256::from(&gas[..]))
 }
@@ -43,6 +42,6 @@ pub fn run_test(data: &Value) -> bool {
     let mut vm = setup_vm(&data);
     match vm.run() {
         VMResult::SUCCESS => true,
-        VMResult::FAILURE(e) => false,
+        _ => false,
     }
 }
