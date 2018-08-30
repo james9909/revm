@@ -47,7 +47,7 @@ fn setup_vm(data: &Value) -> VM {
     let caller = Address::from(&read_serde_hex(&exec["caller"])[..]);
     let code = read_serde_hex(&exec["code"]);
     let data = read_serde_hex(&exec["data"]);
-    let gas = U256::from(&read_serde_hex(&exec["data"])[..]);
+    let gas = U256::from(&read_serde_hex(&exec["gas"])[..]);
     let origin = Address::from(&read_serde_hex(&exec["origin"])[..]);
     let owner = Address::from(&read_serde_hex(&exec["address"])[..]);
     let value = U256::from(&read_serde_hex(&exec["value"])[..]);
@@ -92,7 +92,8 @@ fn validate_results(post: &Value, vm: &VM) -> bool {
             let offset = U256::from(&read_hex(offset)[..]);
             let value = U256::from(&read_serde_hex(value)[..]);
 
-            let candidate = vm.state
+            let candidate = vm
+                .state
                 .account_manager
                 .get_storage(&address, &offset)
                 .unwrap();
@@ -114,6 +115,9 @@ pub fn run_test(data: &Value) -> bool {
     let mut vm = setup_vm(&data);
     match vm.run() {
         VMResult::SUCCESS => validate_results(&data["post"], &vm),
-        _ => false,
+        VMResult::FAILURE(e) => {
+            // If a test doesn't contain postconditions, then a failure is intended
+            data["post"].as_object().is_none()
+        }
     }
 }

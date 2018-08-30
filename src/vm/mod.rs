@@ -1,11 +1,12 @@
 mod account;
+mod block;
 mod memory;
 mod stack;
 
 use tiny_keccak::keccak256;
 
 use asm::instruction::{Instruction, ProgramReader};
-use bigint::{Address, U256};
+use bigint::{Address, U256, U512};
 use errors::{Error, Result};
 use vm::account::AccountManager;
 use vm::memory::Memory;
@@ -71,6 +72,7 @@ impl VM {
             return Ok(InstructionResult::STOP);
         }
         let instruction = self.reader.next_instruction()?;
+        println!("{:?}", instruction);
         match instruction {
             Instruction::PUSH(value) => {
                 self.state.stack.push(value)?;
@@ -144,7 +146,10 @@ impl VM {
                 self.state.stack.push(if c == U256::zero() {
                     c
                 } else {
-                    (a.overflowing_add(b).0).overflowing_rem(c).0
+                    let a = U512::from(a);
+                    let b = U512::from(b);
+                    let c = U512::from(c);
+                    U256::from(a.overflowing_add(b).0.overflowing_rem(c).0)
                 })?;
             }
             Instruction::MULMOD => {
@@ -154,7 +159,10 @@ impl VM {
                 self.state.stack.push(if c == U256::zero() {
                     c
                 } else {
-                    (a.overflowing_mul(b).0).overflowing_rem(c).0
+                    let a = U512::from(a);
+                    let b = U512::from(b);
+                    let c = U512::from(c);
+                    U256::from(a.overflowing_mul(b).0.overflowing_rem(c).0)
                 })?;
             }
             Instruction::EXP => {
@@ -163,16 +171,19 @@ impl VM {
                 self.state.stack.push(base.overflowing_pow(power).0)?;
             }
             Instruction::SIGNEXTEND => {
-                let value = self.state.stack.pop()?;
-                self.state.stack.push(if value > U256::from(32) {
-                    value
+                let position = self.state.stack.pop()?;
+                let number = self.state.stack.pop()?;
+                self.state.stack.push(if position > U256::from(32) {
+                    number
                 } else {
-                    let bit = (value.low_u64() * 8 + 7) as usize;
-                    let mask = (U256::one() << bit) - U256::one();
-                    if value.bit(bit) {
-                        value | !mask
+                    let bit_position = (position.low_u64() * 8 + 7) as usize;
+                    let bit = number.bit(bit_position);
+
+                    let mask = (U256::one() << bit_position) - U256::one();
+                    if bit {
+                        number | !mask
                     } else {
-                        value & mask
+                        number & mask
                     }
                 })?;
             }

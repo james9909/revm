@@ -211,7 +211,7 @@ impl ProgramReader {
             }
             DUP1...DUP16 => {
                 let size = (opcode - DUP1 + 1) as usize;
-                self.position += size;
+                self.position += size - 1; // DUP1 is not supposed to change the PC
                 Instruction::DUP(size)
             }
             SWAP1...SWAP16 => {
