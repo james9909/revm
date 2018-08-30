@@ -75,13 +75,13 @@ pub enum Instruction {
     PUSH(U256),
 
     // Duplication Operations
-    DUP(u8),
+    DUP(usize),
 
     // Exchange Operations
-    SWAP(u8),
+    SWAP(usize),
 
     // Logging Operations
-    LOG(u8),
+    LOG(usize),
 
     // System Operations
     CREATE,
@@ -210,18 +210,18 @@ impl ProgramReader {
                 }
             }
             DUP1...DUP16 => {
-                let size = opcode - DUP1 + 1;
-                self.position += size as usize;
+                let size = (opcode - DUP1 + 1) as usize;
+                self.position += size;
                 Instruction::DUP(size)
             }
             SWAP1...SWAP16 => {
-                let size = opcode - SWAP1 + 1;
-                self.position += size as usize;
+                let size = (opcode - SWAP1 + 1) as usize;
+                self.position += size;
                 Instruction::SWAP(size)
             }
             LOG1...LOG4 => {
-                let size = opcode - LOG1 + 1;
-                self.position += size as usize;
+                let size = (opcode - LOG1 + 1) as usize;
+                self.position += size;
                 Instruction::LOG(size)
             }
 
