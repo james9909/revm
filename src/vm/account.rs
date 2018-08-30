@@ -26,7 +26,7 @@ impl Storage {
 pub struct AccountState {
     code: Vec<u8>,
     nonce: u32,
-    balance: u32,
+    balance: U256,
     storage: Storage,
 }
 
@@ -35,7 +35,7 @@ impl AccountState {
         AccountState {
             code: Vec::new(),
             nonce: 0,
-            balance: 0,
+            balance: U256::zero(),
             storage: Storage::new(),
         }
     }
@@ -68,7 +68,7 @@ impl AccountManager {
         }
     }
 
-    pub fn balance(&self, address: &Address) -> Result<u32> {
+    pub fn balance(&self, address: &Address) -> Result<U256> {
         let account = self.get_account(address)?;
         Ok(account.balance)
     }
