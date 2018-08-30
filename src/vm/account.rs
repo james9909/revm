@@ -39,6 +39,26 @@ impl AccountState {
             storage: Storage::new(),
         }
     }
+
+    pub fn set_balance(&mut self, balance: U256) {
+        self.balance = balance;
+    }
+
+    pub fn get_balance(&self) -> U256 {
+        self.balance
+    }
+
+    pub fn set_code(&mut self, code: Vec<u8>) {
+        self.code = code;
+    }
+
+    pub fn get_code(&self) -> &Vec<u8> {
+        &self.code
+    }
+
+    pub fn get_nonce(&self) -> u32 {
+        self.nonce
+    }
 }
 
 pub struct AccountManager {
