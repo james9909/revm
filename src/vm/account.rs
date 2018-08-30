@@ -52,11 +52,11 @@ impl AccountManager {
         }
     }
 
-    fn get_account(&self, address: &Address) -> Result<AccountState> {
+    fn get_account(&self, address: &Address) -> Result<&AccountState> {
         if !self.accounts.contains_key(address) {
             Err(Error::AccountNotFound)
         } else {
-            Ok(self.accounts[address])
+            Ok(&self.accounts[address])
         }
     }
 
@@ -67,6 +67,6 @@ impl AccountManager {
 
     pub fn code(&self, address: &Address) -> Result<Vec<u8>> {
         let account = self.get_account(address)?;
-        Ok(account.code)
+        Ok(account.code.clone())
     }
 }
