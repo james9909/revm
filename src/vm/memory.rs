@@ -36,6 +36,15 @@ impl Memory {
         Ok(())
     }
 
+    pub fn write_byte(&mut self, offset: U256, value: u8) -> Result<()> {
+        let offset = offset.low_u64() as usize;
+        if offset >= self.bytes.len() {
+            self.expand(offset + 1);
+        }
+        self.bytes[offset] = value;
+        Ok(())
+    }
+
     pub fn read(&mut self, offset: U256, amount: U256) -> Result<U256> {
         let offset = offset.low_u64() as usize;
         let amount = amount.low_u64() as usize;

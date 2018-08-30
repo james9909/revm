@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use errors::{Error, Result};
 
 pub struct Storage {
-    storage: HashMap<U256, M256>,
+    storage: HashMap<U256, U256>,
 }
 
 impl Storage {
@@ -14,12 +14,12 @@ impl Storage {
         }
     }
 
-    fn insert(&mut self, key: U256, value: M256) {
+    fn insert(&mut self, key: U256, value: U256) {
         self.storage.insert(key, value);
     }
 
-    fn get(&self, key: &U256) -> Result<M256> {
-        Ok(self.storage.get(key).unwrap_or(&M256::zero()).clone())
+    fn get(&self, key: &U256) -> Result<U256> {
+        Ok(self.storage.get(key).unwrap_or(&U256::zero()).clone())
     }
 }
 
@@ -60,6 +60,14 @@ impl AccountManager {
         }
     }
 
+    fn get_account_mut(&mut self, address: &Address) -> Result<&mut AccountState> {
+        if !self.accounts.contains_key(address) {
+            Err(Error::AccountNotFound)
+        } else {
+            Ok(self.accounts.get_mut(address).unwrap())
+        }
+    }
+
     pub fn balance(&self, address: &Address) -> Result<u32> {
         let account = self.get_account(address)?;
         Ok(account.balance)
@@ -68,5 +76,16 @@ impl AccountManager {
     pub fn code(&self, address: &Address) -> Result<Vec<u8>> {
         let account = self.get_account(address)?;
         Ok(account.code.clone())
+    }
+
+    pub fn get_storage(&self, address: &Address, offset: &U256) -> Result<U256> {
+        let account = self.get_account(address)?;
+        Ok(account.storage.get(offset)?)
+    }
+
+    pub fn insert_storage(&mut self, address: &Address, offset: U256, value: U256) -> Result<()> {
+        let account = self.get_account_mut(address)?;
+        account.storage.insert(offset, value);
+        Ok(())
     }
 }

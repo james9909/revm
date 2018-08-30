@@ -67,9 +67,9 @@ impl VM {
     }
 
     pub fn step(&mut self) -> Result<InstructionResult> {
-        if self.reader.is_done() {
-            return Ok(InstructionResult::STOP);
-        }
+        // if self.reader.is_done() {
+        //     return Ok(InstructionResult::STOP);
+        // }
         let instruction = self.reader.next_instruction()?;
         match instruction {
             Instruction::PUSH(value) => {
@@ -339,13 +339,67 @@ impl VM {
             Instruction::GASLIMIT => {
                 // TODO
             }
+            Instruction::POP => {
+                self.state.stack.pop()?;
+            }
+            Instruction::MLOAD => {
+                let offset = self.state.stack.pop()?;
+                let value = self.state.memory.read(offset, U256::from(32))?;
+                self.state.stack.push(value)?;
+            }
+            Instruction::MSTORE => {
+                let offset = self.state.stack.pop()?;
+                let value = self.state.stack.pop()?;
+                self.state.memory.write(offset, value)?;
+            }
+            Instruction::MSTORE8 => {
+                let offset = self.state.stack.pop()?;
+                let value = self.state.stack.pop()?;
+                self.state.memory.write_byte(offset, value.byte(0))?;
+            }
+            Instruction::SLOAD => {
+                let offset = self.state.stack.pop()?;
+                let data = self
+                    .state
+                    .account_manager
+                    .get_storage(&self.state.owner, &offset)?;
+                self.state.stack.push(data)?;
+            }
+            Instruction::SSTORE => {
+                let offset = self.state.stack.pop()?;
+                let value = self.state.stack.pop()?;
+                self.state
+                    .account_manager
+                    .insert_storage(&self.state.owner, offset, value)?;
+            }
+            Instruction::JUMP => {
+                let offset = self.state.stack.pop()?.low_u64() as usize;
+                self.reader.jump(offset);
+            }
+            Instruction::JUMPI => {
+                let offset = self.state.stack.pop()?.low_u64() as usize;
+                let cond = self.state.stack.pop()?;
+                if cond != U256::zero() {
+                    self.reader.jump(offset);
+                }
+            }
+            Instruction::PC => self.state.stack.push(U256::from(self.reader.position))?,
+            Instruction::MSIZE => {
+                self.state
+                    .stack
+                    .push(U256::from(self.state.memory.size() * 32))?;
+            }
+            Instruction::GAS => {
+                self.state.stack.push(self.state.gas_available)?;
+            }
+            Instruction::JUMPDEST => {}
             _ => return Ok(InstructionResult::STOP),
         };
         Ok(InstructionResult::NOTHING)
     }
 
     pub fn run(&mut self) -> VMResult {
-        while self.state.pc < self.reader.size() {
+        loop {
             let result = self.step();
             match result {
                 Ok(instruction_result) => match instruction_result {

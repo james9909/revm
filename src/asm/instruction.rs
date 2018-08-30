@@ -97,7 +97,7 @@ pub enum Instruction {
 
 pub struct ProgramReader {
     code: Vec<u8>,
-    position: usize,
+    pub position: usize,
 }
 
 impl ProgramReader {
@@ -126,6 +126,10 @@ impl ProgramReader {
 
     pub fn size(&self) -> usize {
         self.code.len()
+    }
+
+    pub fn jump(&mut self, position: usize) {
+        self.position = position;
     }
 
     pub fn next_instruction(&mut self) -> Result<Instruction> {
