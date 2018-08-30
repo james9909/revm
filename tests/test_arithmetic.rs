@@ -14,5 +14,5 @@ lazy_static! {
 
 #[test]
 fn test_add0() {
-    // assert!(run_test(&tests["add0"]));
+    assert!(run_test(&tests["add0"]));
 }

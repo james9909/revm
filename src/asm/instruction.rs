@@ -120,6 +120,10 @@ impl ProgramReader {
         Ok(result)
     }
 
+    pub fn is_done(&self) -> bool {
+        self.position == self.code.len() - 1
+    }
+
     pub fn size(&self) -> usize {
         self.code.len()
     }
