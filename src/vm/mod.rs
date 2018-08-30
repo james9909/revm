@@ -14,13 +14,13 @@ use vm::stack::Stack;
 const MAX_STACK_SIZE: usize = 1024;
 
 /// The possible end states of a VM run
-enum VMResult {
+pub enum VMResult {
     SUCCESS,
     FAILURE(Error),
 }
 
 /// The result of running an Instruction
-enum InstructionResult {
+pub enum InstructionResult {
     NOTHING,
     STOP,
     REVERT,
@@ -41,13 +41,13 @@ struct VMState {
     value: U256,
 }
 
-struct VM<'a> {
-    reader: ProgramReader<'a>,
+pub struct VM {
+    reader: ProgramReader,
     state: VMState,
 }
 
-impl<'a> VM<'a> {
-    pub fn new(code: &'a [u8], gas_available: U256) -> Self {
+impl VM {
+    pub fn new(code: Vec<u8>, gas_available: U256) -> Self {
         VM {
             reader: ProgramReader::new(code),
             state: VMState {
@@ -323,7 +323,7 @@ impl<'a> VM<'a> {
         Ok(InstructionResult::NOTHING)
     }
 
-    fn run(&mut self) -> VMResult {
+    pub fn run(&mut self) -> VMResult {
         while self.state.pc < self.reader.size() {
             let result = self.step();
             match result {

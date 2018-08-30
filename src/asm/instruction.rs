@@ -95,13 +95,13 @@ pub enum Instruction {
     SELFDESTRUCT,
 }
 
-pub struct ProgramReader<'a> {
-    code: &'a [u8],
+pub struct ProgramReader {
+    code: Vec<u8>,
     position: usize,
 }
 
-impl<'a> ProgramReader<'a> {
-    pub fn new(code: &'a [u8]) -> Self {
+impl ProgramReader {
+    pub fn new(code: Vec<u8>) -> Self {
         Self {
             code: code,
             position: 0,
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_program_reader() {
-        let mut reader = ProgramReader::new(&[PUSH1, 0x1]);
+        let mut reader = ProgramReader::new(vec![PUSH1, 0x1]);
         assert_eq!(
             reader.next_instruction().unwrap(),
             Instruction::PUSH(U256::from(0x1))
@@ -254,7 +254,7 @@ mod tests {
     fn test_program_reader_no_operand() {
         for push in PUSH1..PUSH32 {
             let code = vec![push];
-            let mut reader = ProgramReader::new(&code);
+            let mut reader = ProgramReader::new(code);
             assert_eq!(reader.next_instruction(), Err(Error::MissingOperand));
         }
     }
