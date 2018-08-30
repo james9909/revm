@@ -318,6 +318,24 @@ impl VM {
             Instruction::RETURNDATACOPY => {
                 // TODO
             }
+            Instruction::BLOCKHASH => {
+                // TODO
+            }
+            Instruction::COINBASE => {
+                // TODO
+            }
+            Instruction::TIMESTAMP => {
+                // TODO
+            }
+            Instruction::NUMBER => {
+                // TODO
+            }
+            Instruction::DIFFICULTY => {
+                // TODO
+            }
+            Instruction::GASLIMIT => {
+                // TODO
+            }
             _ => return Ok(InstructionResult::STOP),
         };
         Ok(InstructionResult::NOTHING)
