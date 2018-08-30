@@ -121,7 +121,7 @@ impl ProgramReader {
     }
 
     pub fn is_done(&self) -> bool {
-        self.position == self.code.len() - 1
+        self.position >= self.code.len()
     }
 
     pub fn size(&self) -> usize {
