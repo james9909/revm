@@ -108,15 +108,16 @@ impl ProgramReader {
         }
     }
 
-    fn read_bytes(&mut self, size: usize) -> Result<&[u8]> {
+    fn read_bytes(&mut self, size: usize) -> Result<Vec<u8>> {
         let start = self.position;
         if start >= self.code.len() {
-            return Err(Error::PcOverflow);
+            return Ok(vec![0; size]);
         }
 
         let end = cmp::min(start + size, self.code.len());
-        let result = &self.code[start..end];
+        let mut result = self.code[start..end].to_vec();
         self.position = end;
+        result.resize(size, 0);
         Ok(result)
     }
 
@@ -205,7 +206,7 @@ impl ProgramReader {
                 // position is automatically incremented when reading bytes
                 let res = self.read_bytes(size);
                 match res {
-                    Ok(bytes) => Instruction::PUSH(U256::from(bytes)),
+                    Ok(bytes) => Instruction::PUSH(U256::from(bytes.as_slice())),
                     Err(_) => return Err(Error::MissingOperand),
                 }
             }
@@ -263,7 +264,7 @@ mod tests {
         for push in PUSH1..PUSH32 {
             let code = vec![push];
             let mut reader = ProgramReader::new(code);
-            assert_eq!(reader.next_instruction(), Err(Error::MissingOperand));
+            assert!(reader.next_instruction().is_ok());
         }
     }
 }
