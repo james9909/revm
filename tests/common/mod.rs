@@ -75,7 +75,8 @@ fn setup_vm(test: &Value) -> VM {
 fn validate_results(post: &Value, vm: &VM) -> bool {
     let post = post.as_object();
     if post.is_none() {
-        return true;
+        // Execution should have failed
+        return false;
     }
     for (address, expected) in post.unwrap() {
         let address = Address::from(&read_hex(address)[..]);
