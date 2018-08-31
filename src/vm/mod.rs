@@ -36,7 +36,6 @@ pub struct VMState {
     memory: Memory,
     stack: Stack<U256>,
     pub gas_available: U256,
-    pc: usize,
     pub owner: Address,
     pub origin: Address,
     pub value: U256,
@@ -59,7 +58,6 @@ impl VM {
                 memory: Memory::new(),
                 stack: Stack::new(MAX_STACK_SIZE),
                 gas_available: gas_available,
-                pc: 0,
                 owner: Address::from(0),
                 origin: Address::from(0),
                 value: U256::zero(),
@@ -74,9 +72,6 @@ impl VM {
         let instruction = self.reader.next_instruction()?;
         println!("{:?}", instruction);
         match instruction {
-            Instruction::PUSH(value) => {
-                self.state.stack.push(value)?;
-            }
             Instruction::STOP => return Ok(InstructionResult::STOP),
             Instruction::ADD => {
                 let left = self.state.stack.pop()?;
@@ -370,7 +365,8 @@ impl VM {
             }
             Instruction::SLOAD => {
                 let offset = self.state.stack.pop()?;
-                let data = self.state
+                let data = self
+                    .state
                     .account_manager
                     .get_storage(&self.state.owner, &offset)?;
                 self.state.stack.push(data)?;
@@ -404,13 +400,13 @@ impl VM {
             }
             Instruction::JUMPDEST => {}
             Instruction::PUSH(value) => {
-                self.state.stack.push(value);
+                self.state.stack.push(value)?;
             }
             Instruction::DUP(position) => {
-                self.state.stack.dup(position);
+                self.state.stack.dup(position)?;
             }
             Instruction::SWAP(position) => {
-                self.state.stack.swap(position);
+                self.state.stack.swap(position)?;
             }
             Instruction::LOG(position) => {
                 // TODO

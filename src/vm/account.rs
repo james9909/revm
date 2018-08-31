@@ -1,4 +1,4 @@
-use bigint::{Address, M256, U256};
+use bigint::{Address, U256};
 use std::collections::HashMap;
 
 use errors::{Error, Result};
