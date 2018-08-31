@@ -70,7 +70,6 @@ impl VM {
             return Ok(InstructionResult::STOP);
         }
         let instruction = self.reader.next_instruction()?;
-        println!("{:?}", instruction);
         match instruction {
             Instruction::STOP => return Ok(InstructionResult::STOP),
             Instruction::ADD => {
