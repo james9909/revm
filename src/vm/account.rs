@@ -103,9 +103,9 @@ impl AccountManager {
         Ok(account.balance)
     }
 
-    pub fn code(&self, address: &Address) -> Result<Vec<u8>> {
+    pub fn code(&self, address: &Address) -> Result<&Vec<u8>> {
         let account = self.get_account(address)?;
-        Ok(account.code.clone())
+        Ok(&account.code)
     }
 
     pub fn get_storage(&self, address: &Address, offset: &U256) -> Result<U256> {
