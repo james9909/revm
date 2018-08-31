@@ -38,8 +38,8 @@ pub fn load_tests(path: &str) -> HashMap<String, Value> {
     all_tests
 }
 
-fn setup_vm(data: &Value) -> VM {
-    let exec = &data["exec"];
+fn setup_vm(test: &Value) -> VM {
+    let exec = &test["exec"];
     let code = read_serde_hex(&exec["code"]);
     let gas = read_serde_hex(&exec["gas"]);
     let mut vm = VM::new(code, U256::from(&gas[..]));
@@ -60,12 +60,24 @@ fn setup_vm(data: &Value) -> VM {
     vm.state.owner = owner;
     vm.state.value = value;
 
-    vm.state.account_manager.create_account(&owner, code, value);
+    let pre = &test["pre"];
+    for (address, account_spec) in pre.as_object().unwrap() {
+        let address = Address::from(&read_hex(address)[..]);
+        let code = &read_serde_hex(&account_spec["code"]);
+        let balance = U256::from(&read_serde_hex(&account_spec["balance"])[..]);
+        vm.state
+            .account_manager
+            .create_account(&address, code.to_vec(), balance);
+    }
     vm
 }
 
 fn validate_results(post: &Value, vm: &VM) -> bool {
-    for (address, expected) in post.as_object().unwrap() {
+    let post = post.as_object();
+    if post.is_none() {
+        return true;
+    }
+    for (address, expected) in post.unwrap() {
         let address = Address::from(&read_hex(address)[..]);
         let account = vm.state.account_manager.get_account(&address).unwrap();
 
