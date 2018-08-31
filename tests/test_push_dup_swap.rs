@@ -210,10 +210,10 @@ fn test_push32Undefined2() {
 fn test_push32Undefined3() {
     assert!(run_test(&TESTS["push32Undefined3"]));
 }
-// #[test]
-// fn test_push33() {
-//     assert!(run_test(&TESTS["push33"]));
-// }
+#[test]
+fn test_push33() {
+    assert!(run_test(&TESTS["push33"]));
+}
 #[test]
 fn test_push4() {
     assert!(run_test(&TESTS["push4"]));

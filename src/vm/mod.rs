@@ -1,14 +1,16 @@
 mod account;
 mod block;
+mod gas_meter;
 mod memory;
 mod stack;
 
 use tiny_keccak::keccak256;
 
 use asm::instruction::{Instruction, ProgramReader};
-use bigint::{Address, U256, U512};
+use bigint::{Address, Gas, U256, U512};
 use errors::{Error, Result};
 use vm::account::AccountManager;
+use vm::gas_meter::GasMeter;
 use vm::memory::Memory;
 use vm::stack::Stack;
 
@@ -35,7 +37,7 @@ pub struct VMState {
     pub data: Vec<u8>,
     memory: Memory,
     stack: Stack<U256>,
-    pub gas_available: U256,
+    pub gas_meter: GasMeter,
     pub owner: Address,
     pub origin: Address,
     pub value: U256,
@@ -47,7 +49,7 @@ pub struct VM {
 }
 
 impl VM {
-    pub fn new(code: Vec<u8>, gas_available: U256) -> Self {
+    pub fn new(code: Vec<u8>, gas_available: Gas) -> Self {
         VM {
             reader: ProgramReader::new(code),
             state: VMState {
@@ -57,7 +59,7 @@ impl VM {
                 data: Vec::new(),
                 memory: Memory::new(),
                 stack: Stack::new(MAX_STACK_SIZE),
-                gas_available: gas_available,
+                gas_meter: GasMeter::new(gas_available),
                 owner: Address::from(0),
                 origin: Address::from(0),
                 value: U256::zero(),
@@ -70,6 +72,8 @@ impl VM {
             return Ok(InstructionResult::STOP);
         }
         let instruction = self.reader.next_instruction()?;
+        let gas_cost = self.state.gas_meter.get_gas_tier(&instruction).get_cost();
+        self.state.gas_meter.consume(gas_cost)?;
         match instruction {
             Instruction::STOP => return Ok(InstructionResult::STOP),
             Instruction::ADD => {
@@ -395,7 +399,9 @@ impl VM {
                     .push(U256::from(self.state.memory.size() * 32))?;
             }
             Instruction::GAS => {
-                self.state.stack.push(self.state.gas_available)?;
+                self.state
+                    .stack
+                    .push(self.state.gas_meter.get_gas().into())?;
             }
             Instruction::JUMPDEST => {}
             Instruction::PUSH(value) => {

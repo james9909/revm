@@ -27,4 +27,7 @@ pub enum Error {
 
     #[fail(display = "account does not exist")]
     AccountNotFound,
+
+    #[fail(display = "out of gas")]
+    OutOfGas,
 }

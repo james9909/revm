@@ -6,7 +6,7 @@ extern crate serde_json;
 
 use self::revm::vm::{VMResult, VM};
 
-use self::bigint::{Address, U256};
+use self::bigint::{Address, Gas, U256};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs::{read_dir, File};
@@ -42,12 +42,11 @@ fn setup_vm(test: &Value) -> VM {
     let exec = &test["exec"];
     let code = read_serde_hex(&exec["code"]);
     let gas = read_serde_hex(&exec["gas"]);
-    let mut vm = VM::new(code, U256::from(&gas[..]));
+    let mut vm = VM::new(code, Gas::from(&gas[..]));
 
     let caller = Address::from(&read_serde_hex(&exec["caller"])[..]);
     let code = read_serde_hex(&exec["code"]);
     let data = read_serde_hex(&exec["data"]);
-    let gas = U256::from(&read_serde_hex(&exec["gas"])[..]);
     let origin = Address::from(&read_serde_hex(&exec["origin"])[..]);
     let owner = Address::from(&read_serde_hex(&exec["address"])[..]);
     let value = U256::from(&read_serde_hex(&exec["value"])[..]);
@@ -55,7 +54,6 @@ fn setup_vm(test: &Value) -> VM {
     vm.state.caller = caller;
     vm.state.code = code.clone();
     vm.state.data = data;
-    vm.state.gas_available = gas;
     vm.state.origin = origin;
     vm.state.owner = owner;
     vm.state.value = value;
