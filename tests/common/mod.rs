@@ -84,18 +84,24 @@ fn validate_results(post: &Value, vm: &VM) -> bool {
         let code = read_serde_hex(&expected["code"]);
         if code != *account.get_code() {
             println!("\nIncorrect code for address 0x{:x}", address);
+            println!("Got {:?}", code);
+            println!("Expected {:?}", *account.get_code());
             return false;
         }
 
         let balance = U256::from(&read_serde_hex(&expected["balance"])[..]);
         if balance != account.get_balance() {
             println!("\nIncorrect balance for address 0x{:x}", address);
+            println!("Got 0x{:x}", balance);
+            println!("Expected 0x{:x}", account.get_balance());
             return false;
         }
 
         let nonce = U256::from(&read_serde_hex(&expected["nonce"])[..]);
         if nonce.low_u32() != account.get_nonce() {
             println!("\nIncorrect nonce for address 0x{:x}", address);
+            println!("Got {}", nonce.low_u32());
+            println!("Expected {}", account.get_nonce());
             return false;
         }
 
