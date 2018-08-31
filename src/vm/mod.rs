@@ -1,6 +1,6 @@
 mod account;
 mod block;
-mod gas_meter;
+mod gas;
 mod memory;
 mod stack;
 
@@ -10,7 +10,7 @@ use asm::instruction::{Instruction, ProgramReader};
 use bigint::{Address, Gas, U256, U512};
 use errors::{Error, Result};
 use vm::account::AccountManager;
-use vm::gas_meter::GasMeter;
+use vm::gas::GasMeter;
 use vm::memory::Memory;
 use vm::stack::Stack;
 
