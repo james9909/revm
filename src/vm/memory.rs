@@ -46,12 +46,11 @@ impl Memory {
     }
 
     pub fn read(&self, offset: U256, amount: U256) -> U256 {
-        let offset = offset.low_u64() as usize;
-        let amount = amount.low_u64() as usize;
-
-        let mut copy: Vec<u8> = Vec::with_capacity(amount);
-        for i in offset..offset + amount {
+        let mut copy: Vec<u8> = Vec::new();
+        let mut i = offset;
+        while i < offset + amount {
             copy.push(self.read_byte(i.into()));
+            i = i + U256::one();
         }
         U256::from(&copy[..])
     }
