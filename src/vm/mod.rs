@@ -166,6 +166,9 @@ impl VM {
             Instruction::EXP => {
                 let base = self.state.stack.pop()?;
                 let power = self.state.stack.pop()?;
+
+                let gas_cost = 50 * (power.bits() / 8);
+                self.state.gas_meter.consume(gas_cost.into())?;
                 self.state.stack.push(base.overflowing_pow(power).0)?;
             }
             Instruction::SIGNEXTEND => {
@@ -262,6 +265,9 @@ impl VM {
                 value.to_big_endian(&mut bytes);
                 let result = keccak256(bytes.as_slice());
 
+                let words = (amount.bits() + 31) >> 5; // divide by 32
+                let gas_cost = 30 + (6 * words);
+                self.state.gas_meter.consume(gas_cost.into())?;
                 self.state.stack.push(U256::from(&result[..]))?;
             }
             Instruction::ADDRESS => {
