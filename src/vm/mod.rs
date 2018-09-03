@@ -10,7 +10,7 @@ use asm::instruction::{Instruction, ProgramReader};
 use bigint::{Address, Gas, U256, U512};
 use errors::{Error, Result};
 use vm::account::AccountManager;
-use vm::gas::GasMeter;
+use vm::gas::{get_gas_tier, GasMeter};
 use vm::memory::Memory;
 use vm::stack::Stack;
 
@@ -72,7 +72,7 @@ impl VM {
             return Ok(InstructionResult::STOP);
         }
         let instruction = self.reader.next_instruction()?;
-        let gas_cost = self.state.gas_meter.get_gas_tier(&instruction).get_cost();
+        let gas_cost = get_gas_tier(&instruction).get_cost();
         self.state.gas_meter.consume(gas_cost)?;
         match instruction {
             Instruction::STOP => return Ok(InstructionResult::STOP),
