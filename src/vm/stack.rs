@@ -23,10 +23,16 @@ impl<T: Copy> Stack<T> {
         Ok(())
     }
 
-    pub fn peek(&self) -> Result<T> {
+    pub fn peek(&self, position: usize) -> Result<T> {
         match self.data.len() {
             0 => Err(Error::StackUnderflow),
-            _ => Ok(self.data[self.data.len() - 1].clone()),
+            _ => {
+                if self.data.len() < position {
+                    Err(Error::StackTooSmall)
+                } else {
+                    Ok(self.data[self.data.len() - position - 1])
+                }
+            }
         }
     }
 
@@ -81,7 +87,7 @@ mod tests {
         }
 
         for i in 10..1 {
-            assert_eq!(stack.peek().unwrap(), i);
+            assert_eq!(stack.peek(0).unwrap(), i);
             assert_eq!(stack.pop().unwrap(), i);
         }
     }
@@ -90,7 +96,7 @@ mod tests {
     fn underflow_error() {
         let mut stack: Stack<i32> = Stack::new(10);
         assert!(stack.pop().is_err());
-        assert!(stack.peek().is_err());
+        assert!(stack.peek(0).is_err());
 
         assert!(stack.dup(1).is_err());
         assert!(stack.swap(1).is_err());

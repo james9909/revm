@@ -72,7 +72,12 @@ impl VM {
             return Ok(InstructionResult::STOP);
         }
         let instruction = self.reader.next_instruction()?;
-        let gas_cost = get_gas_tier(&instruction).get_cost();
+        let gas_cost = self.state.gas_meter.gas_cost(&self, &instruction)?;
+        let mem_cost = self
+            .state
+            .gas_meter
+            .memory_cost(&self.state.stack, &instruction)?;
+
         self.state.gas_meter.consume(gas_cost)?;
         match instruction {
             Instruction::STOP => return Ok(InstructionResult::STOP),
@@ -167,8 +172,6 @@ impl VM {
                 let base = self.state.stack.pop()?;
                 let power = self.state.stack.pop()?;
 
-                let gas_cost = 50 * (power.bits() / 8);
-                self.state.gas_meter.consume(gas_cost.into())?;
                 self.state.stack.push(base.overflowing_pow(power).0)?;
             }
             Instruction::SIGNEXTEND => {
@@ -265,9 +268,6 @@ impl VM {
                 value.to_big_endian(&mut bytes);
                 let result = keccak256(bytes.as_slice());
 
-                let words = (amount.bits() + 31) >> 5; // divide by 32
-                let gas_cost = 30 + (6 * words);
-                self.state.gas_meter.consume(gas_cost.into())?;
                 self.state.stack.push(U256::from(&result[..]))?;
             }
             Instruction::ADDRESS => {
@@ -307,8 +307,11 @@ impl VM {
             }
             Instruction::CODECOPY => {
                 let mem_offset = self.state.stack.pop()?;
-                let code_offset = self.state.stack.pop()?.low_u64() as usize;
-                let code_size = self.state.stack.pop()?.low_u64() as usize;
+                let code_offset = self.state.stack.pop()?;
+                let code_size = self.state.stack.pop()?;
+
+                let code_offset = code_offset.low_u64() as usize;
+                let code_size = code_size.low_u64() as usize;
                 let value = &self.state.code[code_offset..code_offset + code_size];
                 self.state.memory.write(mem_offset, U256::from(value))?;
             }
@@ -407,7 +410,7 @@ impl VM {
             Instruction::GAS => {
                 self.state
                     .stack
-                    .push(self.state.gas_meter.get_gas().into())?;
+                    .push(self.state.gas_meter.remaining_gas().into())?;
             }
             Instruction::JUMPDEST => {}
             Instruction::PUSH(value) => {

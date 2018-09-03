@@ -70,8 +70,8 @@ fn setup_vm(test: &Value) -> VM {
     vm
 }
 
-fn validate_results(post: &Value, vm: &VM) -> bool {
-    let post = post.as_object();
+fn validate_results(data: &Value, vm: &VM) -> bool {
+    let post = data["post"].as_object();
     if post.is_none() {
         // Execution should have failed
         return false;
@@ -104,6 +104,15 @@ fn validate_results(post: &Value, vm: &VM) -> bool {
             return false;
         }
 
+        let gas = Gas::from(&read_serde_hex(&data["gas"])[..]);
+        let remaining_gas = vm.state.gas_meter.remaining_gas();
+        if gas != remaining_gas {
+            println!("\nIncorrect gas calculations");
+            println!("Got 0x{:x}", remaining_gas);
+            println!("Expected 0x{:x}", gas);
+            return false;
+        }
+
         let storage = expected["storage"].as_object().unwrap();
         for (offset, value) in storage {
             let offset = U256::from(&read_hex(offset)[..]);
@@ -131,7 +140,7 @@ fn validate_results(post: &Value, vm: &VM) -> bool {
 pub fn run_test(data: &Value) -> bool {
     let mut vm = setup_vm(&data);
     match vm.run() {
-        VMResult::SUCCESS => validate_results(&data["post"], &vm),
+        VMResult::SUCCESS => validate_results(&data, &vm),
         VMResult::FAILURE(_e) => {
             // If a test doesn't contain postconditions, then a failure is intended
             data["post"].as_object().is_none()
