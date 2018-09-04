@@ -225,8 +225,13 @@ impl GasMeter {
             }
             _ => self.memory_cost,
         };
-        self.memory_cost = cost;
-        Ok(memory_gas_cost(cost))
+        let check = memory_gas_cost(cost);
+        if check > self.gas_limit - self.gas_cost {
+            Err(Error::OutOfGas)
+        } else {
+            self.memory_cost = cost;
+            Ok(check)
+        }
     }
 
     fn memory_expand(&self, offset: U256, amount: U256) -> Gas {
