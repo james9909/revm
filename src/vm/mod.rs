@@ -264,9 +264,12 @@ impl VM {
                 let offset = self.state.stack.pop()?;
                 let amount = self.state.stack.pop()?;
                 let value = self.state.memory.read(offset, amount);
+
                 let mut bytes = vec![0; 32];
                 value.to_big_endian(&mut bytes);
-                let result = keccak256(bytes.as_slice());
+
+                let amount = amount.low_u64() as usize;
+                let result = keccak256(&bytes[32 - amount..]);
 
                 self.state.stack.push(U256::from(&result[..]))?;
             }
