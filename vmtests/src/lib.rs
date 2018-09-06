@@ -42,7 +42,7 @@ fn setup_vm(test: &Value) -> VM {
     let exec = &test["exec"];
     let code = read_serde_hex(&exec["code"]);
     let gas = read_serde_hex(&exec["gas"]);
-    let gas_price = read_serde_hex(&exec["gas_price"]);
+    let gas_price = read_serde_hex(&exec["gasPrice"]);
     let mut vm = VM::new(code, Gas::from(&gas_price[..]), Gas::from(&gas[..]));
 
     let caller = Address::from(&read_serde_hex(&exec["caller"])[..]);
