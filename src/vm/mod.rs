@@ -406,7 +406,9 @@ impl VM {
                     self.reader.jump(offset);
                 }
             }
-            Instruction::PC => self.state.stack.push(U256::from(self.reader.position))?,
+            Instruction::PC => {
+                self.state.stack.push(U256::from(self.reader.position - 1))?;
+            }
             Instruction::MSIZE => {
                 self.state
                     .stack
