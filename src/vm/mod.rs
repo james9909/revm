@@ -1,6 +1,7 @@
 mod account;
 mod block;
 mod gas;
+mod log;
 mod memory;
 mod stack;
 
@@ -9,8 +10,10 @@ use tiny_keccak::keccak256;
 use asm::instruction::{Instruction, ProgramReader};
 use bigint::{Address, Gas, U256, U512};
 use errors::{Error, Result};
+use rlp;
 use vm::account::AccountManager;
 use vm::gas::GasMeter;
+use vm::log::Log;
 use vm::memory::Memory;
 use vm::stack::Stack;
 
@@ -32,13 +35,15 @@ pub enum InstructionResult {
 /// Information regarding the current state of the VM
 pub struct VMState {
     pub account_manager: AccountManager,
+    pub gas_meter: GasMeter,
+    memory: Memory,
+    stack: Stack<U256>,
+    pub logs: Vec<Log>,
+
     pub caller: Address,
     pub code: Vec<u8>,
     pub data: Vec<u8>,
-    memory: Memory,
-    stack: Stack<U256>,
-    gas_price: Gas,
-    pub gas_meter: GasMeter,
+    pub gas_price: Gas,
     pub owner: Address,
     pub origin: Address,
     pub value: U256,
@@ -55,13 +60,15 @@ impl VM {
             reader: ProgramReader::new(code),
             state: VMState {
                 account_manager: AccountManager::new(),
+                gas_meter: GasMeter::new(gas_available),
+                memory: Memory::new(),
+                stack: Stack::new(MAX_STACK_SIZE),
+                logs: Vec::new(),
+
                 code: Vec::new(),
                 caller: Address::from(0),
                 data: Vec::new(),
-                memory: Memory::new(),
-                stack: Stack::new(MAX_STACK_SIZE),
                 gas_price: gas_price,
-                gas_meter: GasMeter::new(gas_available),
                 owner: Address::from(0),
                 origin: Address::from(0),
                 value: U256::zero(),
@@ -429,8 +436,20 @@ impl VM {
             Instruction::SWAP(position) => {
                 self.state.stack.swap(position)?;
             }
-            Instruction::LOG(position) => {
-                // TODO
+            Instruction::LOG(length) => {
+                let offset = self.state.stack.pop()?;
+                let amount = self.state.stack.pop()?;
+                let data = self.state.memory.read(offset, amount)?;
+
+                let mut topics = Vec::new();
+                for _ in 0..length {
+                    topics.push(self.state.stack.pop()?.into());
+                }
+                self.state.logs.push(Log {
+                    address: self.state.owner,
+                    data: data,
+                    topics: topics,
+                })
             }
             _ => return Ok(InstructionResult::STOP),
         };
@@ -454,6 +473,12 @@ impl VM {
             }
         }
         VMResult::SUCCESS
+    }
+
+    pub fn log_hash(&self) -> U256 {
+        let encoded = rlp::encode_list(&self.state.logs[..]);
+        let result = keccak256(&encoded[..]);
+        U256::from(&result[..])
     }
 }
 

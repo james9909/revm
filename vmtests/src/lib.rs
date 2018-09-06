@@ -114,6 +114,15 @@ fn validate_results(data: &Value, vm: &VM) -> bool {
             return false;
         }
 
+        let expected_log_hash = U256::from(&read_serde_hex(&data["logs"])[..]);
+        let actual_log_hash = vm.log_hash();
+        if expected_log_hash != actual_log_hash {
+            println!("\nIncorrect log hash");
+            println!("Got 0x{:x}", actual_log_hash);
+            println!("Expected 0x{:x}", expected_log_hash);
+            return false;
+        }
+
         let storage = expected["storage"].as_object().unwrap();
         for (offset, value) in storage {
             let offset = U256::from(&read_hex(offset)[..]);
