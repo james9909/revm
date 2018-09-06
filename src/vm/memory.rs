@@ -1,5 +1,5 @@
 use bigint::U256;
-use errors::Result;
+use errors::{Error, Result};
 
 /// Size of a word in bytes
 const WORD_SIZE: usize = 32;
@@ -45,14 +45,18 @@ impl Memory {
         Ok(())
     }
 
-    pub fn read(&self, offset: U256, amount: U256) -> U256 {
+    pub fn read(&self, offset: U256, amount: U256) -> Result<U256> {
+        if offset.overflowing_add(amount).1 {
+            return Err(Error::MemoryOutOfRange);
+        }
+
         let mut copy: Vec<u8> = Vec::new();
         let mut i = offset;
         while i < offset + amount {
             copy.push(self.read_byte(i.into()));
             i = i + U256::one();
         }
-        U256::from(&copy[..])
+        Ok(U256::from(&copy[..]))
     }
 
     pub fn read_byte(&self, offset: U256) -> u8 {
@@ -79,18 +83,21 @@ mod tests {
         let mut memory = Memory::new();
         let value = U256::from(0x12);
         assert!(memory.write(U256::zero(), value).is_ok());
-        assert_eq!(memory.read(U256::zero(), U256::from(32)), value);
+        assert_eq!(memory.read(U256::zero(), U256::from(32)).unwrap(), value);
     }
 
     #[test]
     fn read_out_of_range() {
         let mut memory = Memory::new();
-        assert_eq!(memory.read(U256::zero(), U256::from(32)), U256::from(0));
+        assert_eq!(
+            memory.read(U256::zero(), U256::from(32)).unwrap(),
+            U256::from(0)
+        );
 
         let value = U256::from(0xabcd);
         assert!(memory.write(U256::zero(), value).is_ok());
         assert_eq!(
-            memory.read(U256::one(), U256::from(32)),
+            memory.read(U256::one(), U256::from(32)).unwrap(),
             U256::from(0xabcd00)
         );
     }
