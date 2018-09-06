@@ -37,6 +37,7 @@ pub struct VMState {
     pub data: Vec<u8>,
     memory: Memory,
     stack: Stack<U256>,
+    gas_price: Gas,
     pub gas_meter: GasMeter,
     pub owner: Address,
     pub origin: Address,
@@ -49,7 +50,7 @@ pub struct VM {
 }
 
 impl VM {
-    pub fn new(code: Vec<u8>, gas_available: Gas) -> Self {
+    pub fn new(code: Vec<u8>, gas_price: Gas, gas_available: Gas) -> Self {
         VM {
             reader: ProgramReader::new(code),
             state: VMState {
@@ -59,6 +60,7 @@ impl VM {
                 data: Vec::new(),
                 memory: Memory::new(),
                 stack: Stack::new(MAX_STACK_SIZE),
+                gas_price: gas_price,
                 gas_meter: GasMeter::new(gas_available),
                 owner: Address::from(0),
                 origin: Address::from(0),
@@ -319,7 +321,7 @@ impl VM {
                 self.state.memory.write(mem_offset, U256::from(value))?;
             }
             Instruction::GASPRICE => {
-                // TODO
+                self.state.stack.push(self.state.gas_price.into())?;
             }
             Instruction::EXTCODESIZE => {
                 let address = u256_to_address(self.state.stack.pop()?);
