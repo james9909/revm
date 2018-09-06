@@ -8,8 +8,6 @@ matrix:
     - rust: nightly
   fast_finish: true
 script:
-    - cargo build --release
-    - cd vmtests
-    - cargo test --release
+    - cargo test --release --all
 notifications:
   email: false
