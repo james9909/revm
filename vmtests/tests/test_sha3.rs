@@ -3,12 +3,11 @@
 #[macro_use]
 extern crate lazy_static;
 extern crate serde_json;
+extern crate vmtests;
 
-mod common;
-
-use common::{load_tests, run_test};
 use serde_json::Value;
 use std::collections::HashMap;
+use vmtests::{load_tests, run_test};
 
 lazy_static! {
     static ref TESTS: HashMap<String, Value> = load_tests("tests/vmSha3Test/");
