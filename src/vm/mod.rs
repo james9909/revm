@@ -1,5 +1,5 @@
 mod account;
-mod block;
+pub mod block;
 mod gas;
 mod log;
 mod memory;
@@ -12,6 +12,7 @@ use bigint::{Address, Gas, U256, U512};
 use errors::{Error, Result};
 use rlp;
 use vm::account::AccountManager;
+use vm::block::Block;
 use vm::gas::GasMeter;
 use vm::log::Log;
 use vm::memory::Memory;
@@ -52,10 +53,11 @@ pub struct VMState {
 pub struct VM {
     reader: ProgramReader,
     pub state: VMState,
+    pub block: Block,
 }
 
 impl VM {
-    pub fn new(code: Vec<u8>, gas_price: Gas, gas_available: Gas) -> Self {
+    pub fn new(code: Vec<u8>, block: Block, gas_price: Gas, gas_available: Gas) -> Self {
         VM {
             reader: ProgramReader::new(code),
             state: VMState {
@@ -73,6 +75,7 @@ impl VM {
                 origin: Address::from(0),
                 value: U256::zero(),
             },
+            block: block,
         }
     }
 
@@ -352,22 +355,31 @@ impl VM {
                 // TODO
             }
             Instruction::BLOCKHASH => {
-                // TODO
+                // Implement the VMTest version of BLOCKHASH
+                // hash of block number n is sha3(n)
+                let number = self.state.stack.pop()?;
+                let mut bytes = vec![0; 32];
+                number.to_big_endian(&mut bytes);
+
+                let result = keccak256(&bytes[..]);
+                self.state.stack.push(U256::from(&result[..]))?;
             }
             Instruction::COINBASE => {
-                // TODO
+                self.state
+                    .stack
+                    .push(address_to_u256(self.block.beneficiary))?;
             }
             Instruction::TIMESTAMP => {
-                // TODO
+                self.state.stack.push(self.block.timestamp)?;
             }
             Instruction::NUMBER => {
-                // TODO
+                self.state.stack.push(self.block.number)?;
             }
             Instruction::DIFFICULTY => {
-                // TODO
+                self.state.stack.push(self.block.difficulty)?;
             }
             Instruction::GASLIMIT => {
-                // TODO
+                self.state.stack.push(self.block.gas_limit)?;
             }
             Instruction::POP => {
                 self.state.stack.pop()?;

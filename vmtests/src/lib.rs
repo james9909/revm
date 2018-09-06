@@ -4,6 +4,7 @@ extern crate bigint;
 extern crate hexutil;
 extern crate serde_json;
 
+use self::revm::vm::block::Block;
 use self::revm::vm::{VMResult, VM};
 
 use self::bigint::{Address, Gas, U256};
@@ -39,11 +40,25 @@ pub fn load_tests(path: &str) -> HashMap<String, Value> {
 }
 
 fn setup_vm(test: &Value) -> VM {
+    let env = &test["env"];
+    let coinbase = Address::from(&read_serde_hex(&env["currentCoinbase"])[..]);
+    let difficulty = U256::from(&read_serde_hex(&env["currentDifficulty"])[..]);
+    let gas_limit = U256::from(&read_serde_hex(&env["currentGasLimit"])[..]);
+    let number = U256::from(&read_serde_hex(&env["currentNumber"])[..]);
+    let timestamp = U256::from(&read_serde_hex(&env["currentTimestamp"])[..]);
+    let block = Block {
+        beneficiary: coinbase,
+        difficulty: difficulty,
+        gas_limit: gas_limit,
+        number: number,
+        timestamp: timestamp,
+    };
+
     let exec = &test["exec"];
     let code = read_serde_hex(&exec["code"]);
     let gas = read_serde_hex(&exec["gas"]);
     let gas_price = read_serde_hex(&exec["gasPrice"]);
-    let mut vm = VM::new(code, Gas::from(&gas_price[..]), Gas::from(&gas[..]));
+    let mut vm = VM::new(code, block, Gas::from(&gas_price[..]), Gas::from(&gas[..]));
 
     let caller = Address::from(&read_serde_hex(&exec["caller"])[..]);
     let code = read_serde_hex(&exec["code"]);
