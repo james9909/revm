@@ -218,8 +218,8 @@ impl ProgramReader {
                 let size = (opcode - SWAP1 + 1) as usize;
                 Instruction::SWAP(size)
             }
-            LOG1...LOG4 => {
-                let size = (opcode - LOG1 + 1) as usize;
+            LOG0...LOG4 => {
+                let size = (opcode - LOG0) as usize;
                 Instruction::LOG(size)
             }
 
