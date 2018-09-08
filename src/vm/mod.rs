@@ -90,10 +90,9 @@ impl VM {
             .state
             .gas_meter
             .memory_cost(&self.state.stack, &instruction)?;
-
         let gas_refund = self.state.gas_meter.gas_refund(&self, &instruction)?;
+
         self.state.gas_meter.consume(gas_cost)?;
-        self.state.gas_meter.refund(gas_refund);
         match instruction {
             Instruction::STOP => return Ok(InstructionResult::STOP),
             Instruction::ADD => {
@@ -511,6 +510,7 @@ impl VM {
             }
             _ => return Ok(InstructionResult::STOP),
         };
+        self.state.gas_meter.refunded_gas = self.state.gas_meter.refunded_gas + gas_refund;
         Ok(InstructionResult::NOTHING)
     }
 

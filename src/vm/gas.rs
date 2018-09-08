@@ -39,10 +39,10 @@ const G_BLOCKHASH: usize = 20;
 const G_QUADDIVISOR: usize = 100;
 
 pub struct GasMeter {
-    gas_limit: Gas,
-    gas_cost: Gas,
-    memory_cost: Gas,
-    refunded_gas: Gas,
+    pub gas_limit: Gas,
+    pub gas_cost: Gas,
+    pub memory_cost: Gas,
+    pub refunded_gas: Gas,
 }
 
 impl GasMeter {
@@ -66,10 +66,6 @@ impl GasMeter {
             self.gas_cost = self.gas_cost + amount;
             Ok(())
         }
-    }
-
-    pub fn refund(&mut self, amount: Gas) {
-        self.refunded_gas = self.refunded_gas + amount;
     }
 
     pub fn gas_refund(&self, vm: &VM, instruction: &Instruction) -> Result<Gas> {
