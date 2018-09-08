@@ -17,6 +17,8 @@ const G_SLOAD: usize = 50;
 const G_JUMPDEST: usize = 1;
 const G_SSET: usize = 20000;
 const G_SRESET: usize = 5000;
+const R_SCLEAR: usize = 15000;
+const R_SELFDESTRUCT: usize = 24000;
 const G_SELFDESTRUCT: usize = 5000;
 const G_CREATE: usize = 32000;
 const G_CODEDEPOSIT: usize = 200;
@@ -40,6 +42,7 @@ pub struct GasMeter {
     gas_limit: Gas,
     gas_cost: Gas,
     memory_cost: Gas,
+    refunded_gas: Gas,
 }
 
 impl GasMeter {
@@ -48,11 +51,12 @@ impl GasMeter {
             gas_limit: gas,
             gas_cost: Gas::zero(),
             memory_cost: Gas::zero(),
+            refunded_gas: Gas::zero(),
         }
     }
 
     pub fn remaining_gas(&self) -> Gas {
-        self.gas_limit - self.gas_cost - memory_gas_cost(self.memory_cost)
+        self.gas_limit - self.gas_cost - memory_gas_cost(self.memory_cost) + self.refunded_gas
     }
 
     pub fn consume(&mut self, amount: Gas) -> Result<()> {
@@ -62,6 +66,29 @@ impl GasMeter {
             self.gas_cost = self.gas_cost + amount;
             Ok(())
         }
+    }
+
+    pub fn refund(&mut self, amount: Gas) {
+        self.refunded_gas = self.refunded_gas + amount;
+    }
+
+    pub fn gas_refund(&self, vm: &VM, instruction: &Instruction) -> Result<Gas> {
+        let refund: Gas = match instruction {
+            Instruction::SSTORE => {
+                let offset = vm.state.stack.peek(0)?;
+                let value = vm.state.stack.peek(1)?;
+                let address = vm.state.owner;
+
+                let result = vm.state.account_manager.get_storage(&address, &offset);
+                if value.is_zero() && (result.is_ok() && !result.unwrap().is_zero()) {
+                    R_SCLEAR.into()
+                } else {
+                    Gas::zero()
+                }
+            }
+            _ => Gas::zero(),
+        };
+        Ok(refund)
     }
 
     pub fn gas_cost(&self, vm: &VM, instruction: &Instruction) -> Result<Gas> {
