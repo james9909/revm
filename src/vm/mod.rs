@@ -11,6 +11,7 @@ use asm::instruction::{Instruction, ProgramReader};
 use bigint::{Address, Gas, U256, U512};
 use errors::{Error, Result};
 use rlp;
+use std::cmp;
 use vm::account::AccountManager;
 use vm::block::Block;
 use vm::gas::GasMeter;
@@ -305,9 +306,25 @@ impl VM {
                 self.state.stack.push(self.state.value)?;
             }
             Instruction::CALLDATALOAD => {
-                let offset = self.state.stack.pop()?.low_u64() as usize;
-                let mut bytes = &self.state.data[offset..offset + 32];
-                self.state.stack.push(U256::from(bytes))?;
+                let offset = self.state.stack.pop()?;
+                let start = if offset > usize::max_value().into() {
+                    self.state.data.len()
+                } else {
+                    offset.low_u64() as usize
+                };
+                let end = cmp::min(start + 32, self.state.data.len());
+                let data_slice = &self.state.data[start..end];
+
+                let mut value = Vec::new();
+                for i in 0..32 {
+                    value.push(if i < data_slice.len() {
+                        data_slice[i]
+                    } else {
+                        0
+                    });
+                }
+
+                self.state.stack.push(U256::from(value.as_slice()))?;
             }
             Instruction::CALLDATASIZE => {
                 self.state.stack.push(U256::from(self.state.data.len()))?;
@@ -316,8 +333,28 @@ impl VM {
                 let mem_offset = self.state.stack.pop()?;
                 let data_offset = self.state.stack.pop()?.low_u64() as usize;
                 let data_size = self.state.stack.pop()?.low_u64() as usize;
-                let value = &self.state.data[data_offset..data_offset + data_size];
-                self.state.memory.write(mem_offset, U256::from(value))?;
+
+                if data_offset > self.state.data.len() {
+                    return Ok(InstructionResult::NOTHING);
+                }
+                if data_offset.overflowing_add(data_size).1 {
+                    return Ok(InstructionResult::NOTHING);
+                }
+
+                let end = cmp::min(data_offset + data_size, self.state.data.len());
+                let data_slice = &self.state.data[data_offset..end];
+
+                let mut value = Vec::new();
+                for i in 0..32 {
+                    value.push(if i < data_slice.len() {
+                        data_slice[i]
+                    } else {
+                        0
+                    });
+                }
+                self.state
+                    .memory
+                    .write(mem_offset, U256::from(value.as_slice()))?;
             }
             Instruction::CODESIZE => {
                 self.state.stack.push(U256::from(self.state.code.len()))?;
@@ -329,8 +366,20 @@ impl VM {
 
                 let code_offset = code_offset.low_u64() as usize;
                 let code_size = code_size.low_u64() as usize;
-                let value = &self.state.code[code_offset..code_offset + code_size];
-                self.state.memory.write(mem_offset, U256::from(value))?;
+                if code_offset < self.state.data.len() {
+                    let code_slice = &self.state.code[code_offset..code_offset + code_size];
+                    let mut value = Vec::new();
+                    for i in 0..32 {
+                        value.push(if i < code_slice.len() {
+                            code_slice[i]
+                        } else {
+                            0
+                        });
+                    }
+                    self.state
+                        .memory
+                        .write(mem_offset, U256::from(value.as_slice()))?;
+                }
             }
             Instruction::GASPRICE => {
                 self.state.stack.push(self.state.gas_price.into())?;

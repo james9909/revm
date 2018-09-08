@@ -164,8 +164,8 @@ impl GasMeter {
             }
             Instruction::CODECOPY | Instruction::CALLDATACOPY | Instruction::RETURNDATACOPY => {
                 let amount = vm.state.stack.peek(2)?;
-                let words = (amount.bits() + 31) >> 5;
-                Gas::from(G_EXTCODE) + Gas::from(G_COPY) * Gas::from(words)
+                let words = (Gas::from(amount) + Gas::from(31u64)) / Gas::from(32u64);
+                Gas::from(G_VERYLOW) + Gas::from(G_COPY) * Gas::from(words)
             }
             Instruction::EXP => {
                 let power = vm.state.stack.peek(1)?;

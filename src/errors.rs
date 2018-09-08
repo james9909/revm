@@ -18,6 +18,8 @@ pub enum Error {
     StackTooSmall,
     #[fail(display = "requested memory is out of range")]
     MemoryOutOfRange,
+    #[fail(display = "requested data is out of range")]
+    DataOutOfRange,
 
     #[fail(display = "PC Overflow")]
     PcOverflow,
@@ -30,4 +32,7 @@ pub enum Error {
 
     #[fail(display = "out of gas")]
     OutOfGas,
+
+    #[fail(display = "not enough funds")]
+    NotEnoughFunds,
 }
