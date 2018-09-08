@@ -27,7 +27,7 @@ impl<T: Copy> Stack<T> {
         match self.data.len() {
             0 => Err(Error::StackUnderflow),
             _ => {
-                if self.data.len() < position {
+                if self.data.len() <= position {
                     Err(Error::StackTooSmall)
                 } else {
                     Ok(self.data[self.data.len() - position - 1])
