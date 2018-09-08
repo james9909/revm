@@ -278,14 +278,9 @@ impl VM {
             Instruction::SHA3 => {
                 let offset = self.state.stack.pop()?;
                 let amount = self.state.stack.pop()?;
-                let value = self.state.memory.read(offset, amount)?;
+                let bytes = self.state.memory.read(offset, amount)?;
 
-                let mut bytes = vec![0; 32];
-                value.to_big_endian(&mut bytes);
-
-                let amount = amount.low_u64() as usize;
-                let result = keccak256(&bytes[32 - amount..]);
-
+                let result = keccak256(&bytes);
                 self.state.stack.push(U256::from(&result[..]))?;
             }
             Instruction::ADDRESS => {
@@ -438,7 +433,7 @@ impl VM {
             Instruction::MLOAD => {
                 let offset = self.state.stack.pop()?;
                 let value = self.state.memory.read(offset, U256::from(32))?;
-                self.state.stack.push(value)?;
+                self.state.stack.push(U256::from(value.as_slice()))?;
             }
             Instruction::MSTORE => {
                 let offset = self.state.stack.pop()?;
