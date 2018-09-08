@@ -482,7 +482,7 @@ impl VM {
             Instruction::MSIZE => {
                 self.state
                     .stack
-                    .push(U256::from(self.state.memory.size() * 32))?;
+                    .push((self.state.gas_meter.memory_cost * Gas::from(32u64)).into())?;
             }
             Instruction::GAS => {
                 self.state
