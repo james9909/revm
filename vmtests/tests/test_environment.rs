@@ -25,26 +25,26 @@ fn test_address1() {
 fn test_calldatacopy0() {
     assert!(run_test(&TESTS["calldatacopy0"]));
 }
-// #[test]
-// fn test_calldatacopy0_return() {
-//     assert!(run_test(&TESTS["calldatacopy0_return"]));
-// }
+#[test]
+fn test_calldatacopy0_return() {
+    assert!(run_test(&TESTS["calldatacopy0_return"]));
+}
 #[test]
 fn test_calldatacopy1() {
     assert!(run_test(&TESTS["calldatacopy1"]));
 }
-// #[test]
-// fn test_calldatacopy1_return() {
-//     assert!(run_test(&TESTS["calldatacopy1_return"]));
-// }
+#[test]
+fn test_calldatacopy1_return() {
+    assert!(run_test(&TESTS["calldatacopy1_return"]));
+}
 #[test]
 fn test_calldatacopy2() {
     assert!(run_test(&TESTS["calldatacopy2"]));
 }
-// #[test]
-// fn test_calldatacopy2_return() {
-//     assert!(run_test(&TESTS["calldatacopy2_return"]));
-// }
+#[test]
+fn test_calldatacopy2_return() {
+    assert!(run_test(&TESTS["calldatacopy2_return"]));
+}
 #[test]
 fn test_calldatacopyUnderFlow() {
     assert!(run_test(&TESTS["calldatacopyUnderFlow"]));
@@ -53,10 +53,10 @@ fn test_calldatacopyUnderFlow() {
 fn test_calldatacopyZeroMemExpansion() {
     assert!(run_test(&TESTS["calldatacopyZeroMemExpansion"]));
 }
-// #[test]
-// fn test_calldatacopyZeroMemExpansion_return() {
-//     assert!(run_test(&TESTS["calldatacopyZeroMemExpansion_return"]));
-// }
+#[test]
+fn test_calldatacopyZeroMemExpansion_return() {
+    assert!(run_test(&TESTS["calldatacopyZeroMemExpansion_return"]));
+}
 #[test]
 fn test_calldatacopy_DataIndexTooHigh() {
     assert!(run_test(&TESTS["calldatacopy_DataIndexTooHigh"]));

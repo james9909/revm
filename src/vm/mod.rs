@@ -49,6 +49,7 @@ pub struct VMState {
     pub owner: Address,
     pub origin: Address,
     pub value: U256,
+    pub out: Vec<u8>,
 }
 
 pub struct VM {
@@ -75,6 +76,7 @@ impl VM {
                 owner: Address::from(0),
                 origin: Address::from(0),
                 value: U256::zero(),
+                out: Vec::new(),
             },
             block: block,
         }
@@ -504,9 +506,14 @@ impl VM {
                 }
                 self.state.logs.push(Log {
                     address: self.state.owner,
-                    data: data,
+                    data: U256::from(data.as_slice()),
                     topics: topics,
                 })
+            }
+            Instruction::RETURN => {
+                let offset = self.state.stack.pop()?;
+                let amount = self.state.stack.pop()?;
+                self.state.out = self.state.memory.read(offset, amount)?;
             }
             _ => return Ok(InstructionResult::STOP),
         };
