@@ -138,6 +138,15 @@ fn validate_results(data: &Value, vm: &VM) -> bool {
             return false;
         }
 
+        let expected_out = &read_serde_hex(&data["out"]);
+        let actual_out = &vm.state.out;
+        if expected_out != actual_out {
+            println!("\nIncorrect out");
+            println!("Got {:?}", actual_out);
+            println!("Expected {:?}", expected_out);
+            return false;
+        }
+
         let storage = expected["storage"].as_object().unwrap();
         for (offset, value) in storage {
             let offset = U256::from(&read_hex(offset)[..]);
