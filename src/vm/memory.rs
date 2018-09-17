@@ -53,7 +53,7 @@ impl Memory {
         let mut copy: Vec<u8> = Vec::new();
         let mut i = offset;
         while i < offset + amount {
-            copy.push(self.read_byte(i.into()));
+            copy.push(self.read_byte(i));
             i = i + U256::one();
         }
         Ok(copy)

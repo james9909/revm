@@ -72,13 +72,13 @@ impl VM {
                 code: Vec::new(),
                 caller: Address::from(0),
                 data: Vec::new(),
-                gas_price: gas_price,
+                gas_price,
                 owner: Address::from(0),
                 origin: Address::from(0),
                 value: U256::zero(),
                 out: Vec::new(),
             },
-            block: block,
+            block,
         }
     }
 
@@ -290,7 +290,7 @@ impl VM {
             Instruction::BALANCE => {
                 let address = u256_to_address(self.state.stack.pop()?);
                 let balance = self.state.account_manager.balance(&address)?;
-                self.state.stack.push(U256::from(balance))?;
+                self.state.stack.push(balance)?;
             }
             Instruction::ORIGIN => {
                 self.state.stack.push(address_to_u256(self.state.origin))?;
@@ -473,7 +473,9 @@ impl VM {
                 }
             }
             Instruction::PC => {
-                self.state.stack.push(U256::from(self.reader.position - 1))?;
+                self.state
+                    .stack
+                    .push(U256::from(self.reader.position - 1))?;
             }
             Instruction::MSIZE => {
                 self.state

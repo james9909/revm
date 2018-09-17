@@ -161,7 +161,7 @@ impl GasMeter {
             Instruction::CODECOPY | Instruction::CALLDATACOPY | Instruction::RETURNDATACOPY => {
                 let amount = vm.state.stack.peek(2)?;
                 let words = (Gas::from(amount) + Gas::from(31u64)) / Gas::from(32u64);
-                Gas::from(G_VERYLOW) + Gas::from(G_COPY) * Gas::from(words)
+                Gas::from(G_VERYLOW) + Gas::from(G_COPY) * words
             }
             Instruction::EXP => {
                 let power = vm.state.stack.peek(1)?;

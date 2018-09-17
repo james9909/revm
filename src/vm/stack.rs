@@ -11,7 +11,7 @@ impl<T: Copy> Stack<T> {
     pub fn new(capacity: usize) -> Stack<T> {
         Stack {
             data: Vec::with_capacity(capacity),
-            capacity: capacity,
+            capacity,
         }
     }
 
@@ -50,7 +50,7 @@ impl<T: Copy> Stack<T> {
                 if self.data.len() < position {
                     Err(Error::StackTooSmall)
                 } else {
-                    let dup = self.data[self.data.len() - position].clone();
+                    let dup = self.data[self.data.len() - position];
                     self.push(dup)
                 }
             }

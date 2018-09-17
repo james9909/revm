@@ -102,10 +102,7 @@ pub struct ProgramReader {
 
 impl ProgramReader {
     pub fn new(code: Vec<u8>) -> Self {
-        Self {
-            code: code,
-            position: 0,
-        }
+        Self { code, position: 0 }
     }
 
     fn read_bytes(&mut self, size: usize) -> Result<Vec<u8>> {

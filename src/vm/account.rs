@@ -19,7 +19,7 @@ impl Storage {
     }
 
     fn get(&self, key: &U256) -> Result<U256> {
-        Ok(self.storage.get(key).unwrap_or(&U256::zero()).clone())
+        Ok(*self.storage.get(key).unwrap_or(&U256::zero()))
     }
 }
 
@@ -61,6 +61,7 @@ impl AccountState {
     }
 }
 
+#[derive(Default)]
 pub struct AccountManager {
     accounts: HashMap<Address, AccountState>,
 }
